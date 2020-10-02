@@ -1,0 +1,18 @@
+# This is a template job file
+# you might need to make some
+# modifications first before is
+# usefull to you
+
+#!/bin/bash
+
+#SBATCH -p medium.p               # partition (queue)
+#SBATCH -n 64                     # number of cores
+#SBATCH -t 0-2:00                 # time (D-HH:MM)
+#SBATCH -o slurm.%N.%j.out        # STDOUT
+#SBATCH -e slurm.%N.%j.err        # STDERR
+
+module load singularity
+module load openmpi/3.1.2-intel-2017
+
+mpirun singularity exec /opt/containers/singularity/gmx/2020.1/openmpi-3.1.6-gmx-2020.1.simg gmx 
+

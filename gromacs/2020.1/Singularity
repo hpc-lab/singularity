@@ -1,0 +1,55 @@
+Bootstrap: docker
+From: ubuntu:18.04
+
+%environment
+    OMPI_VERSION=3.1.6
+    OMPI_FILE=openmpi-${OMPI_VERSION}.tar.bz2
+    export OMPI_VERSION
+    export OMPI_FILE
+    export OMPI_DIR=/opt/ompi
+    export SINGULARITY_OMPI_DIR=$OMPI_DIR
+    export SINGULARITYENV_APPEND_PATH=$OMPI_DIR/bin
+    export SINGULAIRTYENV_APPEND_LD_LIBRARY_PATH=$OMPI_DIR/lib
+
+%files
+    openmpi-3.1.6.tar.bz2 /build/
+    gromacs-2020.1.tar.gz /build/
+%post
+    echo "Installing required packages..."
+    apt-get update \
+    && apt-get install -y wget \
+    	git \
+	bash \
+	gcc \
+	gfortran \
+	g++ \
+	make \
+	cmake \
+	file \
+	libibverbs-dev \
+	&& apt clean
+    echo "Installing Open MPI" \
+	&& export OMPI_DIR=/opt/ompi \
+	&& export OMPI_VERSION=3.1.6 \
+	&& mkdir -p $OMPI_DIR
+    tar jxf /build/openmpi-3.1.6.tar.bz2 -C /build \
+        && cd /build/openmpi-3.1.6 \
+	&& ./configure --prefix=$OMPI_DIR \
+	&& make -j8 install
+    export PATH=$OMPI_DIR/bin:$PATH
+    export LD_LIBRARY_PATH=$OMPI_DIR/lib:$LD_LIBRARY_PATH
+    export MANPATH=$OMPI_DIR/share/man:$MANPATH
+    echo "Installing Gromacs" \
+	&& export GMX_DIR=/opt/gmx \
+	&& export GMX_VERSION=2020.1 \
+	&& mkdir -p $OMPI_DIR
+    tar zxf /build/gromacs-2020.1.tar.gz -C /build \
+        && cd /build/gromacs-2020.1 \
+	&& mkdir build \
+	&& cd build \
+	&& cmake .. -DCMAKE_INSTALL_PREFIX:PATH=/opt/gmx -DGMX_BUILD_OWN_FFTW=ON -DREGRESSIONTEST_DOWNLOAD=ON \
+	&& make -j8 \
+	&& make install \
+	&& echo ". /opt/gmx/bin/GMXRC.bash" >> $SINGULARITY_ENVIRONMENT
+%runscript
+	. /opt/gmx/bin/GMXRC.bash
